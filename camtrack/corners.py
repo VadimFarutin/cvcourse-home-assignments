@@ -36,16 +36,54 @@ class _CornerStorageBuilder:
 
 def _build_impl(frame_sequence: pims.FramesSequence,
                 builder: _CornerStorageBuilder) -> None:
-    image_0 = frame_sequence[0]
-    corners = FrameCorners(
-        np.array([0]),
-        np.array([[0, 0]]),
-        np.array([55])
-    )
-    builder.set_corners_at_frame(0, corners)
-    for frame, image_1 in enumerate(frame_sequence[1:], 1):
-        builder.set_corners_at_frame(frame, corners)
-        image_0 = image_1
+
+    min_distance = 10
+    corners_cnt = 500
+    quality_level = 0.01
+    params_dict = dict(maxCorners=corners_cnt,
+                       qualityLevel=quality_level,
+                       minDistance=min_distance,
+                       useHarrisDetector=False,
+                       blockSize=min_distance)
+
+    prev_frame = frame_sequence[0]
+    prev_frame *= 255
+    prev_frame = prev_frame.astype(np.uint8)
+
+    corners = cv2.goodFeaturesToTrack(image=prev_frame, **params_dict)
+    ids = np.arange(len(corners))
+    sizes = np.full(len(corners), min_distance)
+
+    frame_corners = FrameCorners(ids, corners, sizes)
+    builder.set_corners_at_frame(0, frame_corners)
+
+    for frame, cur_frame in enumerate(frame_sequence[1:], 1):
+        cur_frame *= 255
+        cur_frame = cur_frame.astype(np.uint8)
+
+        corners, status, _ = cv2.calcOpticalFlowPyrLK(prev_frame, cur_frame,
+                                                      corners, None,
+                                                      winSize=(min_distance, min_distance))
+        status = status.reshape(-1).astype(np.bool)
+        corners = corners[status]
+        ids = ids[status]
+        sizes = np.full(len(corners), min_distance)
+
+        if len(corners) < corners_cnt:
+            mask = np.full_like(cur_frame, 255)
+
+            for x, y in corners.reshape(-1, 2):
+                cv2.circle(mask, (x, y), min_distance, 0, -1)
+
+            params_dict['maxCorners'] = corners_cnt - len(corners)
+            new_corners = cv2.goodFeaturesToTrack(cur_frame, mask=mask, **params_dict)
+            corners = np.append(corners, new_corners).reshape((-1, 1, 2))
+            ids = np.arange(len(corners))
+            sizes = np.full(len(corners), min_distance)
+
+        frame_corners = FrameCorners(ids, corners, sizes)
+        builder.set_corners_at_frame(frame, frame_corners)
+        prev_frame = cur_frame
 
 
 def build(frame_sequence: pims.FramesSequence,
