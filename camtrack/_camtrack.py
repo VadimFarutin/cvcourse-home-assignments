@@ -12,6 +12,7 @@ __all__ = [
     'draw_residuals',
     'eye3x4',
     'project_points',
+    'remove_correspondences_with_ids',
     'rodrigues_and_translation_to_view_mat3x4',
     'to_camera_center',
     'to_opencv_camera_mat3x3',
@@ -126,6 +127,12 @@ TriangulationParameters = namedtuple(
     'TriangulationParameters',
     ('max_reprojection_error', 'min_triangulation_angle_deg', 'min_depth')
 )
+
+
+def remove_correspondences_with_ids(correspondences: Correspondences,
+                                    ids_to_remove: np.ndarray) \
+        -> Correspondences:
+    return _remove_correspondences_with_ids(correspondences, ids_to_remove)
 
 
 def _remove_correspondences_with_ids(correspondences: Correspondences,
