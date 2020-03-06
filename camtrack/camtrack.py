@@ -71,9 +71,9 @@ def _track_camera_int(corner_storage,
             for j in range(storage_size):
                 if view_mats[j] is not None and j != i:
                     _add_points(points,
+                                corner_storage[i],
                                 corner_storage[j],
-                                corner_storage[j],
-                                view_mats[j],
+                                view_mats[i],
                                 view_mats[j],
                                 intrinsic_mat,
                                 parameters)
