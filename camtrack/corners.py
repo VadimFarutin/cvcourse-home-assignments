@@ -43,7 +43,7 @@ def _build_impl(frame_sequence: pims.FramesSequence,
     params_dict = dict(maxCorners=max_corners_cnt,
                        qualityLevel=quality_level,
                        minDistance=9,
-                       useHarrisDetector=False,
+                       useHarrisDetector=True,
                        blockSize=9)
 
     prev_frame = frame_sequence[0]

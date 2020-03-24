@@ -142,7 +142,7 @@ def _get_pose_mat(point_all, corners, intrinsic_mat):
     if not retval:
         return None
 
-    point_all[ids[ids not in inliers.flatten()]] = None
+    point_all[ids[ids not in inliers]] = None
     mat = rodrigues_and_translation_to_view_mat3x4(rvec, tvec)
 
     return mat
@@ -187,7 +187,8 @@ def _check_pair(corners1, corners2, intrinsic_mat, parameters):
                                             dstPoints=correspondences.points_2,
                                             method=cv2.RANSAC,
                                             ransacReprojThreshold=parameters.max_reprojection_error)
-    inliers_homography_cnt = np.sum(mask_homography != 0)
+    #inliers_homography_cnt = np.sum(mask_homography != 0)
+    inliers_homography_cnt = np.sum(np.abs(mask_homography) > 1e-5)
     print(f"    Inliers for homography: {inliers_homography_cnt}")
 
     if inliers_cnt < inliers_homography_cnt:
